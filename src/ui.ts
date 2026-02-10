@@ -1,0 +1,285 @@
+import { CATEGORIES, type Setting } from "./schema";
+import { getValue, setValue, resetAll, subscribe } from "./state";
+import { generateConfig } from "./generate";
+import { copyToClipboard } from "./clipboard";
+import { createPreview } from "./preview";
+import { parseConfig } from "./parse";
+import { getLocalFonts } from "./fonts";
+
+const inputElements: Map<string, HTMLInputElement | HTMLSelectElement> = new Map();
+const colorPickers: Map<string, HTMLInputElement> = new Map();
+
+let fontDatalist: HTMLDataListElement | null = null;
+
+function createField(setting: Setting): HTMLDivElement {
+  const div = document.createElement("div");
+  div.className = "field";
+
+  const label = document.createElement("label");
+  label.textContent = setting.label;
+  label.htmlFor = `field-${setting.key}`;
+  if (setting.description) label.title = setting.description;
+  div.appendChild(label);
+
+  if (setting.type === "color") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "color-pair";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = getValue(setting.key);
+
+    const textInput = document.createElement("input");
+    textInput.type = "text";
+    textInput.id = `field-${setting.key}`;
+    textInput.value = getValue(setting.key);
+
+    colorInput.addEventListener("input", () => {
+      textInput.value = colorInput.value;
+      setValue(setting.key, colorInput.value);
+    });
+    textInput.addEventListener("input", () => {
+      if (/^#[0-9a-fA-F]{6}$/.test(textInput.value)) {
+        colorInput.value = textInput.value;
+      }
+      setValue(setting.key, textInput.value);
+    });
+
+    wrapper.appendChild(colorInput);
+    wrapper.appendChild(textInput);
+    div.appendChild(wrapper);
+
+    inputElements.set(setting.key, textInput);
+    colorPickers.set(setting.key, colorInput);
+    return div;
+  }
+
+  let control: HTMLInputElement | HTMLSelectElement;
+
+  switch (setting.type) {
+    case "enum":
+    case "bool": {
+      const select = document.createElement("select");
+      const options = setting.type === "bool" ? ["yes", "no"] : setting.options;
+      for (const opt of options) {
+        const optEl = document.createElement("option");
+        optEl.value = opt;
+        optEl.textContent = opt;
+        select.appendChild(optEl);
+      }
+      select.value = getValue(setting.key);
+      control = select;
+      break;
+    }
+    case "float": {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = String(setting.step ?? 0.1);
+      if (setting.min !== undefined) input.min = String(setting.min);
+      if (setting.max !== undefined) input.max = String(setting.max);
+      input.value = getValue(setting.key);
+      control = input;
+      break;
+    }
+    case "int": {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.step = "1";
+      if (setting.min !== undefined) input.min = String(setting.min);
+      if (setting.max !== undefined) input.max = String(setting.max);
+      input.value = getValue(setting.key);
+      control = input;
+      break;
+    }
+    default: {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = getValue(setting.key);
+      if (setting.key === "font_family") {
+        fontDatalist = document.createElement("datalist");
+        fontDatalist.id = "font-families";
+        input.setAttribute("list", "font-families");
+        div.appendChild(fontDatalist);
+        loadFonts();
+      }
+      control = input;
+      break;
+    }
+  }
+
+  control.id = `field-${setting.key}`;
+  if (setting.description) control.title = setting.description;
+  control.addEventListener("input", () => {
+    setValue(setting.key, control.value);
+  });
+
+  div.appendChild(control);
+  inputElements.set(setting.key, control);
+  return div;
+}
+
+async function loadFonts(): Promise<void> {
+  if (!fontDatalist) return;
+  const families = await getLocalFonts();
+  for (const family of families) {
+    const opt = document.createElement("option");
+    opt.value = family;
+    fontDatalist.appendChild(opt);
+  }
+}
+
+export function render(root: HTMLElement): void {
+  const header = document.createElement("header");
+  const h1 = document.createElement("h1");
+  const code = document.createElement("code");
+  code.textContent = "kitty.conf";
+  h1.appendChild(code);
+  h1.appendChild(document.createTextNode(" generator"));
+  const tagline = document.createElement("p");
+  tagline.appendChild(document.createTextNode("Configure your "));
+  const kittyCode = document.createElement("code");
+  kittyCode.textContent = "kitty";
+  tagline.appendChild(kittyCode);
+  tagline.appendChild(
+    document.createTextNode(
+      " terminal. Only changed settings are included in the output.",
+    ),
+  );
+  header.appendChild(h1);
+  header.appendChild(tagline);
+  root.appendChild(header);
+
+  const main = document.createElement("main");
+
+  const controls = document.createElement("section");
+  controls.className = "controls";
+
+  for (const category of CATEGORIES) {
+    const fieldset = document.createElement("fieldset");
+    const legend = document.createElement("legend");
+    legend.textContent = category.title;
+    fieldset.appendChild(legend);
+
+    for (const setting of category.settings) {
+      fieldset.appendChild(createField(setting));
+    }
+    controls.appendChild(fieldset);
+  }
+  main.appendChild(controls);
+
+  const rightCol = document.createElement("div");
+  rightCol.className = "right-col";
+
+  const previewSection = document.createElement("section");
+  previewSection.className = "preview-section";
+  createPreview(previewSection);
+  rightCol.appendChild(previewSection);
+
+  const output = document.createElement("section");
+  output.className = "output";
+
+  const outputHeader = document.createElement("div");
+  outputHeader.className = "output-header";
+  const h2 = document.createElement("h2");
+  h2.textContent = "Generated Config";
+
+  const buttons = document.createElement("div");
+  buttons.className = "output-buttons";
+
+  const importBtn = document.createElement("button");
+  importBtn.textContent = "Import";
+  importBtn.className = "btn-secondary";
+
+  const resetBtn = document.createElement("button");
+  resetBtn.textContent = "Reset";
+  resetBtn.className = "btn-secondary";
+  resetBtn.addEventListener("click", () => {
+    resetAll();
+  });
+
+  const copyBtn = document.createElement("button");
+  copyBtn.textContent = "Copy";
+  copyBtn.addEventListener("click", async () => {
+    const ok = await copyToClipboard(codeEl.textContent ?? "");
+    copyBtn.textContent = ok ? "Copied!" : "Failed";
+    setTimeout(() => {
+      copyBtn.textContent = "Copy";
+    }, 1500);
+  });
+
+  buttons.appendChild(importBtn);
+  buttons.appendChild(resetBtn);
+  buttons.appendChild(copyBtn);
+  outputHeader.appendChild(h2);
+  outputHeader.appendChild(buttons);
+  output.appendChild(outputHeader);
+
+  const importSection = document.createElement("div");
+  importSection.className = "import-section hidden";
+
+  const importTextarea = document.createElement("textarea");
+  importTextarea.placeholder = "Paste your kitty.conf here...";
+  importTextarea.rows = 8;
+
+  const importActions = document.createElement("div");
+  importActions.className = "import-actions";
+
+  const applyBtn = document.createElement("button");
+  applyBtn.textContent = "Apply";
+  applyBtn.addEventListener("click", () => {
+    const count = parseConfig(importTextarea.value);
+    applyBtn.textContent = `Applied ${count} settings`;
+    setTimeout(() => {
+      applyBtn.textContent = "Apply";
+    }, 1500);
+    importTextarea.value = "";
+    importSection.classList.add("hidden");
+  });
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.className = "btn-secondary";
+  cancelBtn.addEventListener("click", () => {
+    importTextarea.value = "";
+    importSection.classList.add("hidden");
+  });
+
+  importActions.appendChild(cancelBtn);
+  importActions.appendChild(applyBtn);
+  importSection.appendChild(importTextarea);
+  importSection.appendChild(importActions);
+  output.appendChild(importSection);
+
+  importBtn.addEventListener("click", () => {
+    importSection.classList.toggle("hidden");
+    if (!importSection.classList.contains("hidden")) {
+      importTextarea.focus();
+    }
+  });
+
+  const preEl = document.createElement("pre");
+  const codeEl = document.createElement("code");
+  preEl.appendChild(codeEl);
+  output.appendChild(preEl);
+  rightCol.appendChild(output);
+  main.appendChild(rightCol);
+
+  root.appendChild(main);
+
+  function syncAll(): void {
+    for (const [key, el] of inputElements) {
+      const val = getValue(key);
+      if (el.value !== val) el.value = val;
+    }
+    for (const [key, picker] of colorPickers) {
+      const val = getValue(key);
+      if (/^#[0-9a-fA-F]{6}$/.test(val) && picker.value !== val) {
+        picker.value = val;
+      }
+    }
+    codeEl.textContent = generateConfig();
+  }
+
+  subscribe(syncAll);
+  codeEl.textContent = generateConfig();
+}
