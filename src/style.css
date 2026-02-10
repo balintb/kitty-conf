@@ -53,6 +53,28 @@ body {
   padding: 2.5rem 2rem;
 }
 
+.url-conflict-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--accent-dim);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-lg);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: 0 0 16px var(--accent-dim);
+}
+
+.url-conflict-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 /* Header */
 header {
   margin-bottom: 2.5rem;
