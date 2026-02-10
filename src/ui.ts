@@ -189,14 +189,26 @@ export function render(root: HTMLElement): void {
 
   const tagline = document.createElement("p");
   tagline.appendChild(document.createTextNode("Configure your "));
+  const kittyLink = document.createElement("a");
+  kittyLink.href = "https://sw.kovidgoyal.net/kitty/";
+  kittyLink.target = "_blank";
+  kittyLink.rel = "noopener";
   const kittyCode = document.createElement("code");
   kittyCode.textContent = "kitty";
-  tagline.appendChild(kittyCode);
+  kittyLink.appendChild(kittyCode);
+  tagline.appendChild(kittyLink);
   tagline.appendChild(
     document.createTextNode(
-      " terminal. Only changed settings are included in the output.",
+      " terminal. Only changed settings are included in the output. ",
     ),
   );
+  const repoLink = document.createElement("a");
+  repoLink.href = "https://balint.click/kitty-conf";
+  repoLink.target = "_blank";
+  repoLink.rel = "noopener";
+  repoLink.className = "byline-link";
+  repoLink.textContent = "GitHub";
+  tagline.appendChild(repoLink);
   header.appendChild(tagline);
   root.appendChild(header);
 
@@ -316,6 +328,21 @@ export function render(root: HTMLElement): void {
   main.appendChild(rightCol);
 
   root.appendChild(main);
+
+  const footer = document.createElement("footer");
+  const footerText = document.createElement("code");
+  footerText.textContent = "$ made with <3 | ";
+  footer.appendChild(footerText);
+  const footerLink = document.createElement("a");
+  footerLink.href = "https://balint.click/jXeIxM";
+  footerLink.target = "_blank";
+  footerLink.rel = "noopener";
+  footerLink.textContent = "balintb";
+  footer.appendChild(footerLink);
+  const footerExit = document.createElement("code");
+  footerExit.textContent = " | exit 0";
+  footer.appendChild(footerExit);
+  root.appendChild(footer);
 
   function syncAll(): void {
     for (const [key, el] of inputElements) {

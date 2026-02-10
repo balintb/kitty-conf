@@ -130,6 +130,23 @@ header p code {
   color: var(--text);
 }
 
+header p a {
+  text-decoration: none;
+}
+
+header p a:hover code {
+  text-decoration: underline;
+}
+
+.byline-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.byline-link:hover {
+  text-decoration: underline;
+}
+
 /* Right column */
 .right-col {
   position: sticky;
@@ -643,6 +660,30 @@ button:active {
   border-color: var(--border-focus);
   background: var(--accent-dim);
   opacity: 1;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 2.5rem 0 1rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+footer code {
+  font-family: var(--mono);
+  font-size: inherit;
+  color: inherit;
+}
+
+footer a {
+  font-family: var(--mono);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: var(--accent);
 }
 
 /* Utility */
