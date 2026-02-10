@@ -353,28 +353,6 @@ export function render(root: HTMLElement): void {
     URL.revokeObjectURL(a.href);
   });
 
-  const shareBtn = document.createElement("button");
-  shareBtn.textContent = "Share";
-  shareBtn.className = "btn-secondary";
-  shareBtn.addEventListener("click", async () => {
-    const url = await buildShareUrl();
-    if (!url.includes("#")) {
-      shareBtn.textContent = "Nothing to share";
-      setTimeout(() => { shareBtn.textContent = "Share"; }, 1500);
-      return;
-    }
-    if (url.length > 2000) {
-      shareBtn.textContent = "URL too long";
-      setTimeout(() => { shareBtn.textContent = "Share"; }, 2000);
-      return;
-    }
-    const ok = await copyToClipboard(url);
-    shareBtn.textContent = ok ? "Link Copied!" : "Failed";
-    setTimeout(() => {
-      shareBtn.textContent = "Share";
-    }, 1500);
-  });
-
   buttons.appendChild(importBtn);
   buttons.appendChild(shareBtn);
   buttons.appendChild(resetBtn);
