@@ -21,4 +21,6 @@ bun run build
 
 ## License
 
-[MIT](LICENSE)
+`kitty-conf` is licensed under the [MIT](LICENSE) license.
+
+The Kitty icon (`public/kitty.svg`) is from the [kitty](https://github.com/kovidgoyal/kitty) project by Kovid Goyal, licensed under [GPLv3](https://github.com/kovidgoyal/kitty/blob/master/LICENSE).
