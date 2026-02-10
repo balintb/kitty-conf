@@ -2,6 +2,7 @@ export type SettingType = "string" | "float" | "int" | "enum" | "bool" | "color"
 
 interface SettingBase {
   key: string;
+  sid: number; // stable share ID — never reuse or change once assigned
   label: string;
   type: SettingType;
   default: string;
@@ -59,12 +60,14 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "font_family",
+        sid: 0,
         label: "Font family",
         type: "string",
         default: "monospace",
       },
       {
         key: "font_size",
+        sid: 1,
         label: "Font size",
         type: "float",
         default: "11.0",
@@ -74,24 +77,28 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "bold_font",
+        sid: 2,
         label: "Bold font",
         type: "string",
         default: "auto",
       },
       {
         key: "italic_font",
+        sid: 3,
         label: "Italic font",
         type: "string",
         default: "auto",
       },
       {
         key: "bold_italic_font",
+        sid: 4,
         label: "Bold italic font",
         type: "string",
         default: "auto",
       },
       {
         key: "disable_ligatures",
+        sid: 5,
         label: "Disable ligatures",
         type: "enum",
         default: "never",
@@ -99,6 +106,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "force_ltr",
+        sid: 6,
         label: "Force LTR",
         type: "bool",
         default: "no",
@@ -106,6 +114,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "font_features",
+        sid: 7,
         label: "Font features",
         type: "string",
         default: "none",
@@ -113,6 +122,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "undercurl_style",
+        sid: 8,
         label: "Undercurl style",
         type: "enum",
         default: "thin-sparse",
@@ -126,6 +136,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "cursor_shape",
+        sid: 9,
         label: "Shape",
         type: "enum",
         default: "block",
@@ -133,6 +144,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_shape_unfocused",
+        sid: 10,
         label: "Unfocused shape",
         type: "enum",
         default: "hollow",
@@ -140,6 +152,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_beam_thickness",
+        sid: 11,
         label: "Beam thickness",
         type: "float",
         default: "1.5",
@@ -149,6 +162,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_underline_thickness",
+        sid: 12,
         label: "Underline thickness",
         type: "float",
         default: "2.0",
@@ -158,6 +172,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_blink_interval",
+        sid: 13,
         label: "Blink interval",
         type: "float",
         default: "-1",
@@ -166,6 +181,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_stop_blinking_after",
+        sid: 14,
         label: "Stop blinking after",
         type: "float",
         default: "15.0",
@@ -175,6 +191,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_text_color",
+        sid: 15,
         label: "Text color",
         type: "string",
         default: "#111111",
@@ -182,6 +199,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "cursor_trail",
+        sid: 16,
         label: "Trail",
         type: "int",
         default: "0",
@@ -196,6 +214,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "scrollback_lines",
+        sid: 17,
         label: "Lines",
         type: "int",
         default: "2000",
@@ -203,6 +222,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "scrollback_pager",
+        sid: 18,
         label: "Pager",
         type: "string",
         default: "less --chop-long-lines --RAW-CONTROL-CHARS +INPUT_LINE_NUMBER",
@@ -210,6 +230,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "scrollback_pager_history_size",
+        sid: 19,
         label: "Pager history size",
         type: "int",
         default: "0",
@@ -218,6 +239,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "scrollback_fill_enlarged_window",
+        sid: 20,
         label: "Fill enlarged window",
         type: "bool",
         default: "no",
@@ -225,6 +247,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "wheel_scroll_multiplier",
+        sid: 21,
         label: "Wheel scroll multiplier",
         type: "float",
         default: "5.0",
@@ -232,6 +255,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "touch_scroll_multiplier",
+        sid: 22,
         label: "Touch scroll multiplier",
         type: "float",
         default: "1.0",
@@ -245,6 +269,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "mouse_hide_wait",
+        sid: 23,
         label: "Hide wait",
         type: "float",
         default: "3.0",
@@ -253,12 +278,14 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "url_color",
+        sid: 24,
         label: "URL color",
         type: "color",
         default: "#0087bd",
       },
       {
         key: "url_style",
+        sid: 25,
         label: "URL style",
         type: "enum",
         default: "curly",
@@ -266,6 +293,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "open_url_with",
+        sid: 26,
         label: "Open URL with",
         type: "string",
         default: "default",
@@ -273,18 +301,21 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "detect_urls",
+        sid: 27,
         label: "Detect URLs",
         type: "bool",
         default: "yes",
       },
       {
         key: "show_hyperlink_targets",
+        sid: 28,
         label: "Show hyperlink targets",
         type: "bool",
         default: "no",
       },
       {
         key: "underline_hyperlinks",
+        sid: 29,
         label: "Underline hyperlinks",
         type: "enum",
         default: "hover",
@@ -292,6 +323,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "copy_on_select",
+        sid: 30,
         label: "Copy on select",
         type: "enum",
         default: "no",
@@ -299,12 +331,14 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "paste_actions",
+        sid: 31,
         label: "Paste actions",
         type: "string",
         default: "quote-urls-at-prompt,confirm",
       },
       {
         key: "strip_trailing_spaces",
+        sid: 32,
         label: "Strip trailing spaces",
         type: "enum",
         default: "never",
@@ -312,6 +346,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "focus_follows_mouse",
+        sid: 33,
         label: "Focus follows mouse",
         type: "bool",
         default: "no",
@@ -324,6 +359,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "repaint_delay",
+        sid: 34,
         label: "Repaint delay",
         type: "int",
         default: "10",
@@ -332,6 +368,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "input_delay",
+        sid: 35,
         label: "Input delay",
         type: "int",
         default: "3",
@@ -340,6 +377,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "sync_to_monitor",
+        sid: 36,
         label: "Sync to monitor",
         type: "bool",
         default: "yes",
@@ -352,12 +390,14 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "enable_audio_bell",
+        sid: 37,
         label: "Audio bell",
         type: "bool",
         default: "yes",
       },
       {
         key: "visual_bell_duration",
+        sid: 38,
         label: "Visual bell duration",
         type: "float",
         default: "0.0",
@@ -367,6 +407,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "visual_bell_color",
+        sid: 39,
         label: "Visual bell color",
         type: "string",
         default: "none",
@@ -374,6 +415,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "window_alert_on_bell",
+        sid: 40,
         label: "Window alert on bell",
         type: "bool",
         default: "yes",
@@ -386,12 +428,14 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "remember_window_size",
+        sid: 41,
         label: "Remember size",
         type: "bool",
         default: "yes",
       },
       {
         key: "initial_window_width",
+        sid: 42,
         label: "Initial width",
         type: "int",
         default: "640",
@@ -399,6 +443,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "initial_window_height",
+        sid: 43,
         label: "Initial height",
         type: "int",
         default: "400",
@@ -406,6 +451,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "enabled_layouts",
+        sid: 44,
         label: "Enabled layouts",
         type: "string",
         default: "*",
@@ -413,6 +459,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "window_border_width",
+        sid: 45,
         label: "Border width",
         type: "string",
         default: "0.5pt",
@@ -420,6 +467,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "window_margin_width",
+        sid: 46,
         label: "Margin",
         type: "int",
         default: "0",
@@ -428,6 +476,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "window_padding_width",
+        sid: 47,
         label: "Padding",
         type: "int",
         default: "0",
@@ -436,6 +485,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "placement_strategy",
+        sid: 48,
         label: "Placement",
         type: "enum",
         default: "center",
@@ -443,18 +493,21 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "active_border_color",
+        sid: 49,
         label: "Active border color",
         type: "color",
         default: "#00ff00",
       },
       {
         key: "inactive_border_color",
+        sid: 50,
         label: "Inactive border color",
         type: "color",
         default: "#cccccc",
       },
       {
         key: "inactive_text_alpha",
+        sid: 51,
         label: "Inactive text alpha",
         type: "float",
         default: "1.0",
@@ -464,6 +517,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "hide_window_decorations",
+        sid: 52,
         label: "Hide decorations",
         type: "enum",
         default: "no",
@@ -471,6 +525,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "confirm_os_window_close",
+        sid: 53,
         label: "Confirm close",
         type: "int",
         default: "-1",
@@ -478,6 +533,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "background_opacity",
+        sid: 54,
         label: "Background opacity",
         type: "float",
         default: "1.0",
@@ -487,6 +543,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "dynamic_background_opacity",
+        sid: 55,
         label: "Dynamic background opacity",
         type: "bool",
         default: "no",
@@ -494,6 +551,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "background_image",
+        sid: 56,
         label: "Background image",
         type: "file",
         default: "none",
@@ -501,6 +559,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "background_image_layout",
+        sid: 57,
         label: "Image layout",
         type: "enum",
         default: "tiled",
@@ -508,6 +567,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "background_image_linear",
+        sid: 58,
         label: "Image linear filtering",
         type: "bool",
         default: "no",
@@ -515,6 +575,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "background_tint",
+        sid: 59,
         label: "Background tint",
         type: "float",
         default: "0.0",
@@ -531,6 +592,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "tab_bar_edge",
+        sid: 60,
         label: "Edge",
         type: "enum",
         default: "bottom",
@@ -538,6 +600,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "tab_bar_style",
+        sid: 61,
         label: "Style",
         type: "enum",
         default: "fade",
@@ -552,6 +615,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "tab_bar_align",
+        sid: 62,
         label: "Alignment",
         type: "enum",
         default: "left",
@@ -559,6 +623,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "tab_bar_margin_width",
+        sid: 63,
         label: "Margin width",
         type: "float",
         default: "0.0",
@@ -567,6 +632,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "tab_powerline_style",
+        sid: 64,
         label: "Powerline style",
         type: "enum",
         default: "angled",
@@ -574,18 +640,21 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "active_tab_foreground",
+        sid: 65,
         label: "Active tab fg",
         type: "color",
         default: "#000000",
       },
       {
         key: "active_tab_background",
+        sid: 66,
         label: "Active tab bg",
         type: "color",
         default: "#eeeeee",
       },
       {
         key: "active_tab_font_style",
+        sid: 67,
         label: "Active font style",
         type: "enum",
         default: "bold-italic",
@@ -593,18 +662,21 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "inactive_tab_foreground",
+        sid: 68,
         label: "Inactive tab fg",
         type: "color",
         default: "#444444",
       },
       {
         key: "inactive_tab_background",
+        sid: 69,
         label: "Inactive tab bg",
         type: "color",
         default: "#999999",
       },
       {
         key: "inactive_tab_font_style",
+        sid: 70,
         label: "Inactive font style",
         type: "enum",
         default: "normal",
@@ -618,86 +690,99 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "foreground",
+        sid: 71,
         label: "Foreground",
         type: "color",
         default: "#dddddd",
       },
       {
         key: "background",
+        sid: 72,
         label: "Background",
         type: "color",
         default: "#000000",
       },
       {
         key: "selection_foreground",
+        sid: 73,
         label: "Selection fg",
         type: "color",
         default: "#000000",
       },
       {
         key: "selection_background",
+        sid: 74,
         label: "Selection bg",
         type: "color",
         default: "#fffacd",
       },
       {
         key: "cursor",
+        sid: 75,
         label: "Cursor",
         type: "color",
         default: "#cccccc",
       },
-      { key: "color0", label: "Black", type: "color", default: "#000000" },
-      { key: "color1", label: "Red", type: "color", default: "#cc0403" },
-      { key: "color2", label: "Green", type: "color", default: "#19cb00" },
-      { key: "color3", label: "Yellow", type: "color", default: "#cecb00" },
-      { key: "color4", label: "Blue", type: "color", default: "#0d73cc" },
-      { key: "color5", label: "Magenta", type: "color", default: "#cb1ed1" },
-      { key: "color6", label: "Cyan", type: "color", default: "#0dcdcd" },
-      { key: "color7", label: "White", type: "color", default: "#dddddd" },
+      { key: "color0", sid: 76, label: "Black", type: "color", default: "#000000" },
+      { key: "color1", sid: 77, label: "Red", type: "color", default: "#cc0403" },
+      { key: "color2", sid: 78, label: "Green", type: "color", default: "#19cb00" },
+      { key: "color3", sid: 79, label: "Yellow", type: "color", default: "#cecb00" },
+      { key: "color4", sid: 80, label: "Blue", type: "color", default: "#0d73cc" },
+      { key: "color5", sid: 81, label: "Magenta", type: "color", default: "#cb1ed1" },
+      { key: "color6", sid: 82, label: "Cyan", type: "color", default: "#0dcdcd" },
+      { key: "color7", sid: 83, label: "White", type: "color", default: "#dddddd" },
       {
         key: "color8",
+        sid: 84,
         label: "Bright black",
         type: "color",
         default: "#767676",
       },
       {
         key: "color9",
+        sid: 85,
         label: "Bright red",
         type: "color",
         default: "#f2201f",
       },
       {
         key: "color10",
+        sid: 86,
         label: "Bright green",
         type: "color",
         default: "#23fd00",
       },
       {
         key: "color11",
+        sid: 87,
         label: "Bright yellow",
         type: "color",
         default: "#fffd00",
       },
       {
         key: "color12",
+        sid: 88,
         label: "Bright blue",
         type: "color",
         default: "#1a8fff",
       },
       {
         key: "color13",
+        sid: 89,
         label: "Bright magenta",
         type: "color",
         default: "#fd28ff",
       },
       {
         key: "color14",
+        sid: 90,
         label: "Bright cyan",
         type: "color",
         default: "#14ffff",
       },
       {
         key: "color15",
+        sid: 91,
         label: "Bright white",
         type: "color",
         default: "#ffffff",
@@ -710,6 +795,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "shell",
+        sid: 92,
         label: "Shell",
         type: "string",
         default: ".",
@@ -717,6 +803,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "editor",
+        sid: 93,
         label: "Editor",
         type: "string",
         default: ".",
@@ -724,12 +811,14 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "close_on_child_death",
+        sid: 94,
         label: "Close on child death",
         type: "bool",
         default: "no",
       },
       {
         key: "allow_remote_control",
+        sid: 95,
         label: "Remote control",
         type: "enum",
         default: "no",
@@ -737,24 +826,28 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "allow_hyperlinks",
+        sid: 96,
         label: "Allow hyperlinks",
         type: "bool",
         default: "yes",
       },
       {
         key: "shell_integration",
+        sid: 97,
         label: "Shell integration",
         type: "string",
         default: "enabled",
       },
       {
         key: "term",
+        sid: 98,
         label: "TERM",
         type: "string",
         default: "xterm-kitty",
       },
       {
         key: "update_check_interval",
+        sid: 99,
         label: "Update check interval",
         type: "int",
         default: "24",
@@ -763,6 +856,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "startup_session",
+        sid: 100,
         label: "Startup session",
         type: "string",
         default: "none",
@@ -775,6 +869,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "macos_option_as_alt",
+        sid: 101,
         label: "Option as Alt",
         type: "enum",
         default: "left",
@@ -782,12 +877,14 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "macos_quit_when_last_window_closed",
+        sid: 102,
         label: "Quit on last close",
         type: "bool",
         default: "yes",
       },
       {
         key: "macos_titlebar_color",
+        sid: 103,
         label: "Titlebar color",
         type: "string",
         default: "system",
@@ -795,18 +892,21 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "macos_hide_from_tasks",
+        sid: 104,
         label: "Hide from tasks",
         type: "bool",
         default: "no",
       },
       {
         key: "macos_window_resizable",
+        sid: 105,
         label: "Window resizable",
         type: "bool",
         default: "yes",
       },
       {
         key: "macos_thicken_font",
+        sid: 106,
         label: "Thicken font",
         type: "float",
         default: "0",
@@ -815,6 +915,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "macos_traditional_fullscreen",
+        sid: 107,
         label: "Traditional fullscreen",
         type: "bool",
         default: "no",
@@ -827,6 +928,7 @@ export const CATEGORIES: Category[] = [
     settings: [
       {
         key: "linux_display_server",
+        sid: 108,
         label: "Display server",
         type: "enum",
         default: "auto",
@@ -834,6 +936,7 @@ export const CATEGORIES: Category[] = [
       },
       {
         key: "wayland_titlebar_color",
+        sid: 109,
         label: "Wayland titlebar color",
         type: "string",
         default: "system",
