@@ -1,10 +1,11 @@
 import { CATEGORIES } from "./schema";
-import { getChangedEntries, getFileName } from "./state";
+import { getChangedEntries, getFileName, getMappings } from "./state";
 
 export function generateConfig(): string {
   const changed = new Map(getChangedEntries());
+  const validMappings = getMappings().filter((m) => m.keys && m.action);
 
-  if (changed.size === 0) {
+  if (changed.size === 0 && validMappings.length === 0) {
     return "# All settings at defaults.\n# Change some settings to generate config\n";
   }
 
@@ -27,6 +28,16 @@ export function generateConfig(): string {
       lines.push(...categoryLines);
       lines.push("");
     }
+  }
+
+  if (validMappings.length > 0) {
+    lines.push("# Key Mappings");
+    for (const m of validMappings) {
+      const parts = ["map", m.keys, m.action];
+      if (m.args) parts.push(m.args);
+      lines.push(parts.join(" "));
+    }
+    lines.push("");
   }
 
   return lines.join("\n");

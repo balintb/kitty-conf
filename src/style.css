@@ -510,7 +510,7 @@ main {
 
 /* Controls */
 .controls {
-  overflow: hidden;
+  margin-top: -8px;
 }
 
 .controls fieldset {
@@ -520,6 +520,7 @@ main {
   background: var(--bg-elevated);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+  min-width: 0;
 }
 
 .controls legend {
@@ -870,6 +871,70 @@ footer a {
 
 footer a:hover {
   color: var(--accent);
+}
+
+/* Mapping rows */
+.mappings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mapping-keys {
+  flex: 3 1 0;
+  min-width: 0;
+  font-family: var(--mono);
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  transition: border-color var(--transition);
+}
+
+.mapping-action {
+  flex: 4 1 0;
+  min-width: 0;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  transition: border-color var(--transition);
+}
+
+.mapping-args {
+  flex: 2 1 0;
+  min-width: 0;
+  font-family: var(--mono);
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  transition: border-color var(--transition);
+}
+
+.mapping-keys:focus,
+.mapping-action:focus,
+.mapping-args:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.mapping-delete {
+  flex: 0 0 auto;
 }
 
 /* Utility */

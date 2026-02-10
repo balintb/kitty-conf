@@ -1,10 +1,27 @@
 import { CATEGORIES, type Setting } from "./schema";
-import { getValue, setValue, setFileName, resetAll, buildShareUrl, subscribe } from "./state";
+import {
+  getValue,
+  setValue,
+  setFileName,
+  resetAll,
+  buildShareUrl,
+  subscribe,
+  getMappings,
+  addMapping,
+  updateMapping,
+  removeMapping,
+} from "./state";
 import { generateConfig } from "./generate";
 import { copyToClipboard } from "./clipboard";
 import { createPreview } from "./preview";
 import { parseConfig } from "./parse";
 import { getLocalFonts } from "./fonts";
+import {
+  ACTION_GROUPS,
+  ACTION_VALUES,
+  getActionHint,
+  type Mapping,
+} from "./mappings";
 
 const inputElements: Map<string, HTMLInputElement | HTMLSelectElement> = new Map();
 
@@ -214,6 +231,137 @@ async function loadFonts(): Promise<void> {
   }
 }
 
+function createMappingRow(mapping: Mapping): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = "mapping-row";
+  row.dataset.id = mapping.id;
+
+  const keysInput = document.createElement("input");
+  keysInput.type = "text";
+  keysInput.className = "mapping-keys";
+  keysInput.placeholder = "ctrl+shift+c";
+  keysInput.value = mapping.keys;
+  keysInput.addEventListener("input", () => {
+    updateMapping(mapping.id, { keys: keysInput.value });
+  });
+
+  const actionSelect = document.createElement("select");
+  actionSelect.className = "mapping-action";
+
+  const emptyOpt = document.createElement("option");
+  emptyOpt.value = "";
+  emptyOpt.textContent = "Choose action\u2026";
+  actionSelect.appendChild(emptyOpt);
+
+  if (mapping.action && !ACTION_VALUES.has(mapping.action)) {
+    const unknownOpt = document.createElement("option");
+    unknownOpt.value = mapping.action;
+    unknownOpt.textContent = mapping.action;
+    actionSelect.appendChild(unknownOpt);
+  }
+
+  for (const group of ACTION_GROUPS) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    for (const action of group.actions) {
+      const opt = document.createElement("option");
+      opt.value = action.value;
+      opt.textContent = action.label;
+      optgroup.appendChild(opt);
+    }
+    actionSelect.appendChild(optgroup);
+  }
+  actionSelect.value = mapping.action;
+
+  const argsInput = document.createElement("input");
+  argsInput.type = "text";
+  argsInput.className = "mapping-args";
+  argsInput.value = mapping.args;
+  const hint = getActionHint(mapping.action);
+  if (hint) argsInput.placeholder = hint;
+
+  actionSelect.addEventListener("change", () => {
+    updateMapping(mapping.id, { action: actionSelect.value });
+    const newHint = getActionHint(actionSelect.value);
+    argsInput.placeholder = newHint || "";
+  });
+
+  argsInput.addEventListener("input", () => {
+    updateMapping(mapping.id, { args: argsInput.value });
+  });
+
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "btn-secondary btn-icon mapping-delete";
+  deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Remove</title><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  deleteBtn.title = "Remove mapping";
+  deleteBtn.addEventListener("click", () => {
+    removeMapping(mapping.id);
+  });
+
+  row.appendChild(keysInput);
+  row.appendChild(actionSelect);
+  row.appendChild(argsInput);
+  row.appendChild(deleteBtn);
+
+  return row;
+}
+
+function syncMappingsList(listEl: HTMLElement): void {
+  const current = getMappings();
+  const existingRows = listEl.querySelectorAll<HTMLDivElement>(".mapping-row");
+  const existingById = new Map<string, HTMLDivElement>();
+  for (const row of existingRows) {
+    existingById.set(row.dataset.id!, row);
+  }
+
+  const currentIds = new Set(current.map((m) => m.id));
+  for (const [id, row] of existingById) {
+    if (!currentIds.has(id)) {
+      row.remove();
+    }
+  }
+
+  for (const mapping of current) {
+    let row = existingById.get(mapping.id);
+    if (!row) {
+      row = createMappingRow(mapping);
+      listEl.appendChild(row);
+    } else {
+      const keysInput = row.querySelector<HTMLInputElement>(".mapping-keys")!;
+      const actionSelect = row.querySelector<HTMLSelectElement>(".mapping-action")!;
+      const argsInput = row.querySelector<HTMLInputElement>(".mapping-args")!;
+
+      if (document.activeElement !== keysInput && keysInput.value !== mapping.keys) {
+        keysInput.value = mapping.keys;
+      }
+      if (document.activeElement !== actionSelect && actionSelect.value !== mapping.action) {
+        if (mapping.action && !ACTION_VALUES.has(mapping.action)) {
+          let hasOption = false;
+          for (const opt of actionSelect.options) {
+            if (opt.value === mapping.action) {
+              hasOption = true;
+              break;
+            }
+          }
+          if (!hasOption) {
+            const unknownOpt = document.createElement("option");
+            unknownOpt.value = mapping.action;
+            unknownOpt.textContent = mapping.action;
+            actionSelect.insertBefore(unknownOpt, actionSelect.options[1]);
+          }
+        }
+        actionSelect.value = mapping.action;
+      }
+      if (document.activeElement !== argsInput && argsInput.value !== mapping.args) {
+        argsInput.value = mapping.args;
+        const argHint = getActionHint(mapping.action);
+        argsInput.placeholder = argHint || "";
+      }
+    }
+  }
+}
+
 export function render(root: HTMLElement): void {
   const header = document.createElement("header");
 
@@ -272,6 +420,27 @@ export function render(root: HTMLElement): void {
     }
     controls.appendChild(fieldset);
   }
+
+  const mappingsFieldset = document.createElement("fieldset");
+  const mappingsLegend = document.createElement("legend");
+  mappingsLegend.textContent = "Key Mappings";
+  mappingsFieldset.appendChild(mappingsLegend);
+
+  const mappingsList = document.createElement("div");
+  mappingsList.className = "mappings-list";
+  mappingsFieldset.appendChild(mappingsList);
+
+  const addMappingBtn = document.createElement("button");
+  addMappingBtn.type = "button";
+  addMappingBtn.textContent = "+ Add mapping";
+  addMappingBtn.className = "btn-secondary";
+  addMappingBtn.addEventListener("click", () => {
+    addMapping({ id: crypto.randomUUID(), keys: "", action: "", args: "" });
+  });
+  mappingsFieldset.appendChild(addMappingBtn);
+
+  controls.appendChild(mappingsFieldset);
+
   main.appendChild(controls);
 
   const rightCol = document.createElement("div");
@@ -572,6 +741,7 @@ export function render(root: HTMLElement): void {
         picker.value = val;
       }
     }
+    syncMappingsList(mappingsList);
     const config = generateConfig();
     codeEl.textContent = config;
     if (permalinkCheckbox.checked) {
