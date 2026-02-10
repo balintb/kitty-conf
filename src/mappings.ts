@@ -134,3 +134,111 @@ export function getActionHint(value: string): string | undefined {
   }
   return undefined;
 }
+
+export const MODIFIERS = ["kitty_mod", "ctrl", "shift", "alt", "super"] as const;
+export type Modifier = (typeof MODIFIERS)[number];
+
+export interface KeyGroup {
+  label: string;
+  keys: { value: string; label: string }[];
+}
+
+export const KEY_GROUPS: KeyGroup[] = [
+  {
+    label: "Letters",
+    keys: Array.from({ length: 26 }, (_, i) => {
+      const ch = String.fromCharCode(97 + i);
+      return { value: ch, label: ch };
+    }),
+  },
+  {
+    label: "Numbers",
+    keys: Array.from({ length: 10 }, (_, i) => ({
+      value: String(i),
+      label: String(i),
+    })),
+  },
+  {
+    label: "Function",
+    keys: Array.from({ length: 12 }, (_, i) => ({
+      value: `f${i + 1}`,
+      label: `F${i + 1}`,
+    })),
+  },
+  {
+    label: "Navigation",
+    keys: [
+      { value: "up", label: "Up" },
+      { value: "down", label: "Down" },
+      { value: "left", label: "Left" },
+      { value: "right", label: "Right" },
+      { value: "home", label: "Home" },
+      { value: "end", label: "End" },
+      { value: "page_up", label: "Page Up" },
+      { value: "page_down", label: "Page Down" },
+      { value: "insert", label: "Insert" },
+      { value: "delete", label: "Delete" },
+    ],
+  },
+  {
+    label: "Whitespace",
+    keys: [
+      { value: "enter", label: "Enter" },
+      { value: "escape", label: "Escape" },
+      { value: "tab", label: "Tab" },
+      { value: "backspace", label: "Backspace" },
+      { value: "space", label: "Space" },
+    ],
+  },
+  {
+    label: "Punctuation",
+    keys: [
+      { value: "minus", label: "- minus" },
+      { value: "equal", label: "= equal" },
+      { value: "left_bracket", label: "[ bracket" },
+      { value: "right_bracket", label: "] bracket" },
+      { value: "backslash", label: "\\ backslash" },
+      { value: "semicolon", label: "; semicolon" },
+      { value: "apostrophe", label: "' apostrophe" },
+      { value: "grave_accent", label: "` grave" },
+      { value: "comma", label: ", comma" },
+      { value: "period", label: ". period" },
+      { value: "slash", label: "/ slash" },
+      { value: "plus", label: "+ plus" },
+    ],
+  },
+];
+
+const ALL_KEY_VALUES = new Set(KEY_GROUPS.flatMap((g) => g.keys.map((k) => k.value)));
+const MODIFIER_SET: Set<string> = new Set(MODIFIERS);
+
+export function parseKeys(keys: string): { modifiers: Set<Modifier>; key: string } | null {
+  if (!keys || keys.includes(">")) return null;
+  const parts = keys.split(/[+-]/);
+  if (parts.length === 0) return null;
+  const key = parts[parts.length - 1].toLowerCase();
+  const modifiers = new Set<Modifier>();
+  for (let i = 0; i < parts.length - 1; i++) {
+    const mod = parts[i].toLowerCase();
+    if (!MODIFIER_SET.has(mod)) return null; // unknown modifier
+    modifiers.add(mod as Modifier);
+  }
+  if (!key) return null;
+  return { modifiers, key };
+}
+
+export function buildKeys(modifiers: Set<Modifier>, key: string): string {
+  const parts: string[] = [];
+  for (const mod of MODIFIERS) {
+    if (modifiers.has(mod)) parts.push(mod);
+  }
+  parts.push(key);
+  return parts.join("+");
+}
+
+export function isStructuredKeys(keys: string): boolean {
+  if (!keys) return true;
+  const parsed = parseKeys(keys);
+  if (!parsed) return false;
+  return ALL_KEY_VALUES.has(parsed.key) || parsed.key.length === 1;
+}

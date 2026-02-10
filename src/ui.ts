@@ -20,7 +20,12 @@ import {
   ACTION_GROUPS,
   ACTION_VALUES,
   getActionHint,
+  MODIFIERS,
+  KEY_GROUPS,
+  parseKeys,
+  buildKeys,
   type Mapping,
+  type Modifier,
 } from "./mappings";
 
 const inputElements: Map<string, HTMLInputElement | HTMLSelectElement> = new Map();
@@ -231,20 +236,10 @@ async function loadFonts(): Promise<void> {
   }
 }
 
-function createMappingRow(mapping: Mapping): HTMLDivElement {
-  const row = document.createElement("div");
-  row.className = "mapping-row";
-  row.dataset.id = mapping.id;
+const ADVANCED_KEY = "kitty-conf-mappings-advanced";
+let advancedMode = localStorage.getItem(ADVANCED_KEY) === "1";
 
-  const keysInput = document.createElement("input");
-  keysInput.type = "text";
-  keysInput.className = "mapping-keys";
-  keysInput.placeholder = "ctrl+shift+c";
-  keysInput.value = mapping.keys;
-  keysInput.addEventListener("input", () => {
-    updateMapping(mapping.id, { keys: keysInput.value });
-  });
-
+function buildActionSelect(mapping: Mapping): HTMLSelectElement {
   const actionSelect = document.createElement("select");
   actionSelect.className = "mapping-action";
 
@@ -272,6 +267,100 @@ function createMappingRow(mapping: Mapping): HTMLDivElement {
     actionSelect.appendChild(optgroup);
   }
   actionSelect.value = mapping.action;
+  return actionSelect;
+}
+
+function buildKeySelect(currentKey: string): HTMLSelectElement {
+  const keySelect = document.createElement("select");
+  keySelect.className = "mapping-key-select";
+
+  const emptyOpt = document.createElement("option");
+  emptyOpt.value = "";
+  emptyOpt.textContent = "Key\u2026";
+  keySelect.appendChild(emptyOpt);
+
+  let foundInGroups = !currentKey || currentKey === "";
+  for (const group of KEY_GROUPS) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = group.label;
+    for (const key of group.keys) {
+      const opt = document.createElement("option");
+      opt.value = key.value;
+      opt.textContent = key.label;
+      optgroup.appendChild(opt);
+      if (key.value === currentKey) foundInGroups = true;
+    }
+    keySelect.appendChild(optgroup);
+  }
+
+  if (currentKey && !foundInGroups) {
+    const unknownOpt = document.createElement("option");
+    unknownOpt.value = currentKey;
+    unknownOpt.textContent = currentKey;
+    keySelect.insertBefore(unknownOpt, keySelect.children[1]);
+  }
+
+  keySelect.value = currentKey;
+  return keySelect;
+}
+
+const MOD_LABELS: Record<Modifier, string> = {
+  kitty_mod: "km",
+  ctrl: "ctrl",
+  shift: "shift",
+  alt: "alt",
+  super: "super",
+};
+
+function createMappingRow(mapping: Mapping, isAdvanced: boolean): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = "mapping-row";
+  row.dataset.id = mapping.id;
+
+  if (isAdvanced) {
+    const keysInput = document.createElement("input");
+    keysInput.type = "text";
+    keysInput.className = "mapping-keys";
+    keysInput.placeholder = "ctrl+shift+c";
+    keysInput.value = mapping.keys;
+    keysInput.addEventListener("input", () => {
+      updateMapping(mapping.id, { keys: keysInput.value });
+    });
+    row.appendChild(keysInput);
+  } else {
+    const parsed = parseKeys(mapping.keys);
+    const activeModifiers = parsed?.modifiers ?? new Set<Modifier>();
+    const activeKey = parsed?.key ?? "";
+
+    const modsGroup = document.createElement("div");
+    modsGroup.className = "mapping-mods";
+
+    for (const mod of MODIFIERS) {
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className = "mod-pill";
+      pill.textContent = MOD_LABELS[mod];
+      pill.dataset.mod = mod;
+      if (activeModifiers.has(mod)) pill.classList.add("active");
+      pill.addEventListener("click", () => {
+        pill.classList.toggle("active");
+        const mods = getModifiersFromRow(row);
+        const key = row.querySelector<HTMLSelectElement>(".mapping-key-select")!.value;
+        updateMapping(mapping.id, { keys: key || mods.size ? buildKeys(mods, key) : "" });
+      });
+      modsGroup.appendChild(pill);
+    }
+    row.appendChild(modsGroup);
+
+    const keySelect = buildKeySelect(activeKey);
+    keySelect.addEventListener("change", () => {
+      const mods = getModifiersFromRow(row);
+      updateMapping(mapping.id, { keys: keySelect.value || mods.size ? buildKeys(mods, keySelect.value) : "" });
+    });
+    row.appendChild(keySelect);
+  }
+
+  const actionSelect = buildActionSelect(mapping);
 
   const argsInput = document.createElement("input");
   argsInput.type = "text";
@@ -299,7 +388,6 @@ function createMappingRow(mapping: Mapping): HTMLDivElement {
     removeMapping(mapping.id);
   });
 
-  row.appendChild(keysInput);
   row.appendChild(actionSelect);
   row.appendChild(argsInput);
   row.appendChild(deleteBtn);
@@ -307,58 +395,70 @@ function createMappingRow(mapping: Mapping): HTMLDivElement {
   return row;
 }
 
+function getModifiersFromRow(row: HTMLElement): Set<Modifier> {
+  const mods = new Set<Modifier>();
+  for (const pill of row.querySelectorAll<HTMLButtonElement>(".mod-pill.active")) {
+    if (pill.dataset.mod) mods.add(pill.dataset.mod as Modifier);
+  }
+  return mods;
+}
+
 function syncMappingsList(listEl: HTMLElement): void {
   const current = getMappings();
   const existingRows = listEl.querySelectorAll<HTMLDivElement>(".mapping-row");
-  const existingById = new Map<string, HTMLDivElement>();
-  for (const row of existingRows) {
-    existingById.set(row.dataset.id!, row);
+
+  // If the set of IDs changed (add/remove/reorder/import), do a full rebuild
+  const existingIds = Array.from(existingRows, (r) => r.dataset.id);
+  const currentIds = current.map((m) => m.id);
+  if (
+    existingIds.length !== currentIds.length ||
+    existingIds.some((id, i) => id !== currentIds[i])
+  ) {
+    rebuildMappingRows(listEl);
+    return;
   }
 
-  const currentIds = new Set(current.map((m) => m.id));
-  for (const [id, row] of existingById) {
-    if (!currentIds.has(id)) {
-      row.remove();
+  for (let i = 0; i < current.length; i++) {
+    const mapping = current[i];
+    const row = existingRows[i];
+
+    const actionSelect = row.querySelector<HTMLSelectElement>(".mapping-action")!;
+    if (document.activeElement !== actionSelect && actionSelect.value !== mapping.action) {
+      if (mapping.action && !ACTION_VALUES.has(mapping.action)) {
+        let hasOption = false;
+        for (const opt of actionSelect.options) {
+          if (opt.value === mapping.action) { hasOption = true; break; }
+        }
+        if (!hasOption) {
+          const unknownOpt = document.createElement("option");
+          unknownOpt.value = mapping.action;
+          unknownOpt.textContent = mapping.action;
+          actionSelect.insertBefore(unknownOpt, actionSelect.children[1]);
+        }
+      }
+      actionSelect.value = mapping.action;
     }
-  }
 
-  for (const mapping of current) {
-    let row = existingById.get(mapping.id);
-    if (!row) {
-      row = createMappingRow(mapping);
-      listEl.appendChild(row);
-    } else {
-      const keysInput = row.querySelector<HTMLInputElement>(".mapping-keys")!;
-      const actionSelect = row.querySelector<HTMLSelectElement>(".mapping-action")!;
-      const argsInput = row.querySelector<HTMLInputElement>(".mapping-args")!;
+    const argsInput = row.querySelector<HTMLInputElement>(".mapping-args")!;
+    if (document.activeElement !== argsInput && argsInput.value !== mapping.args) {
+      argsInput.value = mapping.args;
+      const argHint = getActionHint(mapping.action);
+      argsInput.placeholder = argHint || "";
+    }
 
-      if (document.activeElement !== keysInput && keysInput.value !== mapping.keys) {
+    if (advancedMode) {
+      const keysInput = row.querySelector<HTMLInputElement>(".mapping-keys");
+      if (keysInput && document.activeElement !== keysInput && keysInput.value !== mapping.keys) {
         keysInput.value = mapping.keys;
       }
-      if (document.activeElement !== actionSelect && actionSelect.value !== mapping.action) {
-        if (mapping.action && !ACTION_VALUES.has(mapping.action)) {
-          let hasOption = false;
-          for (const opt of actionSelect.options) {
-            if (opt.value === mapping.action) {
-              hasOption = true;
-              break;
-            }
-          }
-          if (!hasOption) {
-            const unknownOpt = document.createElement("option");
-            unknownOpt.value = mapping.action;
-            unknownOpt.textContent = mapping.action;
-            actionSelect.insertBefore(unknownOpt, actionSelect.options[1]);
-          }
-        }
-        actionSelect.value = mapping.action;
-      }
-      if (document.activeElement !== argsInput && argsInput.value !== mapping.args) {
-        argsInput.value = mapping.args;
-        const argHint = getActionHint(mapping.action);
-        argsInput.placeholder = argHint || "";
-      }
     }
+  }
+}
+
+function rebuildMappingRows(listEl: HTMLElement): void {
+  listEl.innerHTML = "";
+  for (const mapping of getMappings()) {
+    listEl.appendChild(createMappingRow(mapping, advancedMode));
   }
 }
 
@@ -409,26 +509,67 @@ export function render(root: HTMLElement): void {
   const controls = document.createElement("section");
   controls.className = "controls";
 
+  const PANELS_KEY = "kitty-conf-panels";
+  function loadPanelStates(): Record<string, boolean> {
+    try {
+      const raw = localStorage.getItem(PANELS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+  function savePanelState(id: string, open: boolean): void {
+    const states = loadPanelStates();
+    states[id] = open;
+    localStorage.setItem(PANELS_KEY, JSON.stringify(states));
+  }
+  const panelStates = loadPanelStates();
+
   for (const category of CATEGORIES) {
-    const fieldset = document.createElement("fieldset");
-    const legend = document.createElement("legend");
-    legend.textContent = category.title;
-    fieldset.appendChild(legend);
+    const panelId = category.title;
+    const details = document.createElement("details");
+    details.className = "controls-group";
+    details.open = panelStates[panelId] ?? true;
+    const summary = document.createElement("summary");
+    summary.textContent = category.title;
+    details.appendChild(summary);
+    details.addEventListener("toggle", () => {
+      savePanelState(panelId, details.open);
+    });
 
     for (const setting of category.settings) {
-      fieldset.appendChild(createField(setting));
+      details.appendChild(createField(setting));
     }
-    controls.appendChild(fieldset);
+    controls.appendChild(details);
   }
 
-  const mappingsFieldset = document.createElement("fieldset");
-  const mappingsLegend = document.createElement("legend");
-  mappingsLegend.textContent = "Key Mappings";
-  mappingsFieldset.appendChild(mappingsLegend);
+  const mappingsId = "Key Mappings";
+  const mappingsDetails = document.createElement("details");
+  mappingsDetails.className = "controls-group";
+  mappingsDetails.open = panelStates[mappingsId] ?? true;
+  const mappingsSummary = document.createElement("summary");
+  mappingsSummary.textContent = "Key Mappings";
+  mappingsDetails.appendChild(mappingsSummary);
+  mappingsDetails.addEventListener("toggle", () => {
+    savePanelState(mappingsId, mappingsDetails.open);
+  });
+
+  const advancedToggle = document.createElement("label");
+  advancedToggle.className = "mapping-advanced-toggle";
+  const advancedCheckbox = document.createElement("input");
+  advancedCheckbox.type = "checkbox";
+  advancedCheckbox.checked = advancedMode;
+  advancedToggle.appendChild(advancedCheckbox);
+  advancedToggle.appendChild(document.createTextNode("Advanced mode"));
+  mappingsDetails.appendChild(advancedToggle);
 
   const mappingsList = document.createElement("div");
   mappingsList.className = "mappings-list";
-  mappingsFieldset.appendChild(mappingsList);
+  mappingsDetails.appendChild(mappingsList);
+
+  advancedCheckbox.addEventListener("change", () => {
+    advancedMode = advancedCheckbox.checked;
+    localStorage.setItem(ADVANCED_KEY, advancedMode ? "1" : "0");
+    rebuildMappingRows(mappingsList);
+  });
 
   const addMappingBtn = document.createElement("button");
   addMappingBtn.type = "button";
@@ -437,9 +578,9 @@ export function render(root: HTMLElement): void {
   addMappingBtn.addEventListener("click", () => {
     addMapping({ id: crypto.randomUUID(), keys: "", action: "", args: "" });
   });
-  mappingsFieldset.appendChild(addMappingBtn);
+  mappingsDetails.appendChild(addMappingBtn);
 
-  controls.appendChild(mappingsFieldset);
+  controls.appendChild(mappingsDetails);
 
   main.appendChild(controls);
 
@@ -743,16 +884,24 @@ export function render(root: HTMLElement): void {
     }
     syncMappingsList(mappingsList);
     const config = generateConfig();
-    codeEl.textContent = config;
     if (permalinkCheckbox.checked) {
+      const base = location.href.split("#")[0];
+      codeEl.textContent = config.replace(
+        /^(# Generated by .*\n)/,
+        `$1# Permalink: ${base}#c=\n`,
+      );
       buildShareUrl().then((url) => {
         if (url.includes("#")) {
           codeEl.textContent = config.replace(
             /^(# Generated by .*\n)/,
             `$1# Permalink: ${url}\n`,
           );
+        } else {
+          codeEl.textContent = config;
         }
       });
+    } else {
+      codeEl.textContent = config;
     }
   }
 
