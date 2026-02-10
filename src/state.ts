@@ -45,6 +45,42 @@ function saveToStorage(): void {
 }
 
 loadFromStorage();
+loadFromUrl();
+
+function loadFromUrl(): void {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  try {
+    const json = decodeURIComponent(escape(atob(hash)));
+    const parsed: unknown = JSON.parse(json);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return;
+    const obj = parsed as Record<string, unknown>;
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "string" && SETTINGS_MAP.has(key)) {
+        const setting = SETTINGS_MAP.get(key)!;
+        if (setting.type !== "file") {
+          values.set(key, value);
+        }
+      }
+    }
+    saveToStorage();
+  } catch {}
+}
+
+export function buildShareUrl(): string {
+  const changed: Record<string, string> = {};
+  for (const [key, value] of getChangedEntries()) {
+    const setting = SETTINGS_MAP.get(key);
+    if (setting && setting.type !== "file") {
+      changed[key] = value;
+    }
+  }
+  const base = location.href.split("#")[0];
+  if (Object.keys(changed).length === 0) return base;
+  const json = JSON.stringify(changed);
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  return `${base}#${encoded}`;
+}
 
 export function getValue(key: string): string {
   return values.get(key) ?? "";
@@ -62,6 +98,7 @@ export function resetAll(): void {
     values.set(key, setting.default);
   }
   localStorage.removeItem(STORAGE_KEY);
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   notify();
 }
 

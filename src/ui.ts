@@ -1,5 +1,5 @@
 import { CATEGORIES, type Setting } from "./schema";
-import { getValue, setValue, setFileName, resetAll, subscribe } from "./state";
+import { getValue, setValue, setFileName, resetAll, buildShareUrl, subscribe } from "./state";
 import { generateConfig } from "./generate";
 import { copyToClipboard } from "./clipboard";
 import { createPreview } from "./preview";
@@ -314,7 +314,25 @@ export function render(root: HTMLElement): void {
     }, 1500);
   });
 
+  const shareBtn = document.createElement("button");
+  shareBtn.textContent = "Share";
+  shareBtn.className = "btn-secondary";
+  shareBtn.addEventListener("click", async () => {
+    const url = buildShareUrl();
+    if (!url.includes("#")) {
+      shareBtn.textContent = "Nothing to share";
+      setTimeout(() => { shareBtn.textContent = "Share"; }, 1500);
+      return;
+    }
+    const ok = await copyToClipboard(url);
+    shareBtn.textContent = ok ? "Link Copied!" : "Failed";
+    setTimeout(() => {
+      shareBtn.textContent = "Share";
+    }, 1500);
+  });
+
   buttons.appendChild(importBtn);
+  buttons.appendChild(shareBtn);
   buttons.appendChild(resetBtn);
   buttons.appendChild(copyBtn);
   outputHeader.appendChild(h2);
