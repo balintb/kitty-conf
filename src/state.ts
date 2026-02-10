@@ -1,5 +1,5 @@
 import { CATEGORIES, SETTINGS_MAP, type Setting } from "./schema";
-import type { Mapping } from "./mappings";
+import { ACTION_TO_ID, ID_TO_ACTION, type Mapping } from "./mappings";
 
 const STORAGE_KEY = "kitty-conf-state";
 const MAPPINGS_STORAGE_KEY = "kitty-conf-mappings";
@@ -134,7 +134,11 @@ function encodeCompact(): string {
   }
   let result = parts.join("&");
   if (mappings.length > 0) {
-    const m = mappings.map(({ keys, action, args }) => [keys, action, args]);
+    const m = mappings.map(({ keys, action, args }) => [
+      keys,
+      ACTION_TO_ID.get(action) ?? action,
+      args,
+    ]);
     result += "|" + JSON.stringify(m);
   }
   return result;
@@ -170,10 +174,10 @@ function decodeCompact(input: string): DecodedData {
   if (pipeIdx !== -1) {
     try {
       const arr = JSON.parse(input.slice(pipeIdx + 1));
-      parsedMappings = arr.map((m: string[]) => ({
-        keys: m[0],
-        action: m[1],
-        args: m[2] || "",
+      parsedMappings = arr.map((m: (string | number)[]) => ({
+        keys: String(m[0]),
+        action: typeof m[1] === "number" ? (ID_TO_ACTION.get(m[1]) ?? String(m[1])) : String(m[1]),
+        args: String(m[2] || ""),
       }));
     } catch {}
   }
