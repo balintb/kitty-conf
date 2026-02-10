@@ -7,6 +7,48 @@ import { parseConfig } from "./parse";
 import { getLocalFonts } from "./fonts";
 
 const inputElements: Map<string, HTMLInputElement | HTMLSelectElement> = new Map();
+
+type Theme = "light" | "dark";
+
+function getSystemTheme(): Theme {
+  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+function getTheme(): Theme {
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark") return stored;
+  return getSystemTheme();
+}
+
+function applyTheme(theme: Theme): void {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+}
+
+function buildThemeToggle(): HTMLElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "theme-toggle";
+
+  const current = getTheme();
+
+  for (const value of ["light", "dark"] as Theme[]) {
+    const btn = document.createElement("button");
+    btn.className = "theme-btn";
+    btn.textContent = value.charAt(0).toUpperCase() + value.slice(1);
+    if (value === current) btn.classList.add("active");
+
+    btn.addEventListener("click", () => {
+      wrapper.querySelector(".theme-btn.active")?.classList.remove("active");
+      btn.classList.add("active");
+      applyTheme(value);
+    });
+
+    wrapper.appendChild(btn);
+  }
+
+  applyTheme(current);
+  return wrapper;
+}
 const colorPickers: Map<string, HTMLInputElement> = new Map();
 
 let fontDatalist: HTMLDataListElement | null = null;
@@ -130,11 +172,21 @@ async function loadFonts(): Promise<void> {
 
 export function render(root: HTMLElement): void {
   const header = document.createElement("header");
+
+  const headerRow = document.createElement("div");
+  headerRow.className = "header-row";
+
   const h1 = document.createElement("h1");
   const code = document.createElement("code");
   code.textContent = "kitty.conf";
   h1.appendChild(code);
   h1.appendChild(document.createTextNode(" generator"));
+
+  const themeToggle = buildThemeToggle();
+  headerRow.appendChild(h1);
+  headerRow.appendChild(themeToggle);
+  header.appendChild(headerRow);
+
   const tagline = document.createElement("p");
   tagline.appendChild(document.createTextNode("Configure your "));
   const kittyCode = document.createElement("code");
@@ -145,7 +197,6 @@ export function render(root: HTMLElement): void {
       " terminal. Only changed settings are included in the output.",
     ),
   );
-  header.appendChild(h1);
   header.appendChild(tagline);
   root.appendChild(header);
 
