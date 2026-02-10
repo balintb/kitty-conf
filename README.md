@@ -4,7 +4,7 @@ A browser-based conf editor / generator for the [kitty](https://sw.kovidgoyal.ne
 
 Change settings, see a live preview, and copy the generated `kitty.conf`.
 
-**Try it:** [balintb.github.io/kitty-conf](https://balintb.github.io/kitty-conf/)
+**Try it:** [kitty-conf.balintb.com](https://kitty-conf.balintb.com/)
 
 ## Development
 
