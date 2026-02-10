@@ -1,5 +1,5 @@
 import { CATEGORIES, type Setting } from "./schema";
-import { getValue, setValue, resetAll, subscribe } from "./state";
+import { getValue, setValue, setFileName, resetAll, subscribe } from "./state";
 import { generateConfig } from "./generate";
 import { copyToClipboard } from "./clipboard";
 import { createPreview } from "./preview";
@@ -132,6 +132,50 @@ function createField(setting: Setting): HTMLDivElement {
       input.value = getValue(setting.key);
       control = input;
       break;
+    }
+    case "file": {
+      const wrapper = document.createElement("div");
+      wrapper.className = "file-pair";
+
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.id = `field-${setting.key}`;
+      if (setting.type === "file" && setting.accept) {
+        fileInput.accept = setting.accept;
+      }
+
+      const clearBtn = document.createElement("button");
+      clearBtn.type = "button";
+      clearBtn.textContent = "Clear";
+      clearBtn.className = "btn-secondary btn-sm";
+
+      const current = getValue(setting.key);
+      if (current === "none" || current === "") {
+        clearBtn.style.display = "none";
+      }
+
+      fileInput.addEventListener("change", () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          setFileName(setting.key, file.name);
+          setValue(setting.key, reader.result as string);
+          clearBtn.style.display = "";
+        };
+        reader.readAsDataURL(file);
+      });
+
+      clearBtn.addEventListener("click", () => {
+        setValue(setting.key, "none");
+        fileInput.value = "";
+        clearBtn.style.display = "none";
+      });
+
+      wrapper.appendChild(fileInput);
+      wrapper.appendChild(clearBtn);
+      div.appendChild(wrapper);
+      return div;
     }
     default: {
       const input = document.createElement("input");

@@ -8,12 +8,22 @@ const urlStyleMap: Record<string, string> = {
   dashed: "dashed",
 };
 
+const layoutCss: Record<string, { size: string; repeat: string; position: string }> = {
+  tiled: { size: "auto", repeat: "repeat", position: "top left" },
+  "mirror-tiled": { size: "auto", repeat: "repeat", position: "top left" },
+  scaled: { size: "100% 100%", repeat: "no-repeat", position: "top left" },
+  clamped: { size: "auto", repeat: "no-repeat", position: "top left" },
+  centered: { size: "auto", repeat: "no-repeat", position: "center" },
+  cscaled: { size: "cover", repeat: "no-repeat", position: "center" },
+};
+
 let root: HTMLElement;
 let titlebar: HTMLElement;
 let tabBarTop: HTMLElement;
 let tabBarBottom: HTMLElement;
 let terminal: HTMLElement;
 let terminalInner: HTMLElement;
+let tintOverlay: HTMLElement;
 
 function el(tag: string, cls?: string, text?: string): HTMLElement {
   const e = document.createElement(tag);
@@ -71,6 +81,8 @@ export function createPreview(container: HTMLElement): void {
 
   terminal = el("div", "kitty-terminal");
   terminalInner = buildTerminalContent();
+  tintOverlay = el("div", "kitty-bg-tint");
+  terminal.appendChild(tintOverlay);
   terminal.appendChild(terminalInner);
   root.appendChild(terminal);
 
@@ -181,16 +193,32 @@ function updatePreview(): void {
     }
   }
 
+  // URL styling — depends on detect_urls and underline_hyperlinks
   const detectUrls = getValue("detect_urls") === "yes";
   const urlStyle = getValue("url_style");
+  const urlColor = getValue("url_color");
+  const underlineHyperlinks = getValue("underline_hyperlinks");
   if (!detectUrls || urlStyle === "none") {
     s.setProperty("--p-url-decoration", "none");
   } else {
     s.setProperty("--p-url-decoration", "underline");
     s.setProperty("--p-url-style", urlStyleMap[urlStyle] ?? "wavy");
-    s.setProperty("--p-url-decoration-color", "#0087bd");
+    s.setProperty("--p-url-decoration-color", urlColor);
+  }
+  const urlEl = terminalInner.querySelector(".url") as HTMLElement | null;
+  if (urlEl) {
+    urlEl.style.cursor = detectUrls ? "pointer" : "";
+    // underline_hyperlinks: hover = show on mouseover, always = always show, never = no decoration
+    if (!detectUrls || underlineHyperlinks === "never") {
+      urlEl.dataset.urlMode = "never";
+    } else if (underlineHyperlinks === "always") {
+      urlEl.dataset.urlMode = "always";
+    } else {
+      urlEl.dataset.urlMode = "hover";
+    }
   }
 
+  // Tab bar position and style
   const edge = getValue("tab_bar_edge");
   tabBarTop.classList.toggle("hidden", edge !== "top");
   tabBarBottom.classList.toggle("hidden", edge !== "bottom");
@@ -201,14 +229,63 @@ function updatePreview(): void {
     bar.classList.toggle("hidden", style === "hidden" || (edge === "top" ? bar === tabBarBottom : bar === tabBarTop));
   }
 
+  // Tab bar colors
+  s.setProperty("--p-active-tab-fg", getValue("active_tab_foreground"));
+  s.setProperty("--p-active-tab-bg", getValue("active_tab_background"));
+  s.setProperty("--p-inactive-tab-fg", getValue("inactive_tab_foreground"));
+  s.setProperty("--p-inactive-tab-bg", getValue("inactive_tab_background"));
+
+  // Tab bar alignment
+  const tabAlign = getValue("tab_bar_align");
+  const justifyMap: Record<string, string> = { left: "flex-start", center: "center", right: "flex-end" };
+  s.setProperty("--p-tab-align", justifyMap[tabAlign] ?? "flex-start");
+
+  // Active tab font style
   const fontStyle = getValue("active_tab_font_style");
   for (const tab of root.querySelectorAll<HTMLElement>(".kitty-tab.active")) {
     tab.style.fontWeight = fontStyle.includes("bold") ? "bold" : "normal";
     tab.style.fontStyle = fontStyle.includes("italic") ? "italic" : "normal";
   }
 
+  // Inactive tab font style
+  const inactiveFontStyle = getValue("inactive_tab_font_style");
+  for (const tab of root.querySelectorAll<HTMLElement>(".kitty-tab.inactive")) {
+    tab.style.fontWeight = inactiveFontStyle.includes("bold") ? "bold" : "normal";
+    tab.style.fontStyle = inactiveFontStyle.includes("italic") ? "italic" : "normal";
+  }
+
+  // Window decorations
   const decorations = getValue("hide_window_decorations");
   titlebar.classList.toggle("hidden", decorations === "yes");
   titlebar.classList.toggle("transparent", decorations === "titlebar-only" || decorations === "titlebar-and-corners");
   root.classList.toggle("no-radius", decorations === "titlebar-and-corners" || decorations === "yes");
+
+  // Background image
+  const bgImage = getValue("background_image");
+  if (bgImage !== "none" && bgImage !== "" && bgImage.startsWith("data:")) {
+    terminal.style.backgroundImage = `url(${bgImage})`;
+    const layout = layoutCss[getValue("background_image_layout")] ?? layoutCss.tiled;
+    terminal.style.backgroundSize = layout.size;
+    terminal.style.backgroundRepeat = layout.repeat;
+    terminal.style.backgroundPosition = layout.position;
+
+    const linear = getValue("background_image_linear") === "yes";
+    terminal.style.imageRendering = linear ? "auto" : "pixelated";
+
+    // Tint overlay
+    const tint = parseFloat(getValue("background_tint")) || 0;
+    if (tint > 0 && bgRgb) {
+      tintOverlay.style.display = "block";
+      tintOverlay.style.background = `rgba(${bgRgb}, ${tint})`;
+    } else {
+      tintOverlay.style.display = "none";
+    }
+  } else {
+    terminal.style.backgroundImage = "";
+    terminal.style.backgroundSize = "";
+    terminal.style.backgroundRepeat = "";
+    terminal.style.backgroundPosition = "";
+    terminal.style.imageRendering = "";
+    tintOverlay.style.display = "none";
+  }
 }
