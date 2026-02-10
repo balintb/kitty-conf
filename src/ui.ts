@@ -293,30 +293,71 @@ export function render(root: HTMLElement): void {
   const buttons = document.createElement("div");
   buttons.className = "output-buttons";
 
+  const icon = (svg: string, title: string): string =>
+    `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>${title}</title>${svg}</svg>`;
+
   const importBtn = document.createElement("button");
-  importBtn.textContent = "Import";
-  importBtn.className = "btn-secondary";
+  importBtn.innerHTML = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', "Import");
+  importBtn.className = "btn-icon btn-secondary";
+  importBtn.title = "Import";
 
   const resetBtn = document.createElement("button");
-  resetBtn.textContent = "Reset";
-  resetBtn.className = "btn-secondary";
+  resetBtn.innerHTML = icon('<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>', "Reset");
+  resetBtn.className = "btn-icon btn-secondary";
+  resetBtn.title = "Reset";
   resetBtn.addEventListener("click", () => {
     resetAll();
   });
 
+  const shareBtn = document.createElement("button");
+  shareBtn.innerHTML = icon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', "Share");
+  shareBtn.className = "btn-icon btn-secondary";
+  shareBtn.title = "Share";
+  shareBtn.addEventListener("click", async () => {
+    const url = await buildShareUrl();
+    if (!url.includes("#")) {
+      shareBtn.title = "Nothing to share";
+      setTimeout(() => { shareBtn.title = "Share"; }, 1500);
+      return;
+    }
+    if (url.length > 2000) {
+      shareBtn.title = "URL too long";
+      setTimeout(() => { shareBtn.title = "Share"; }, 2000);
+      return;
+    }
+    const ok = await copyToClipboard(url);
+    shareBtn.title = ok ? "Link copied!" : "Failed";
+    setTimeout(() => { shareBtn.title = "Share"; }, 1500);
+  });
+
   const copyBtn = document.createElement("button");
-  copyBtn.textContent = "Copy";
+  copyBtn.innerHTML = icon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', "Copy");
+  copyBtn.className = "btn-icon btn-secondary";
+  copyBtn.title = "Copy";
   copyBtn.addEventListener("click", async () => {
     const ok = await copyToClipboard(codeEl.textContent ?? "");
-    copyBtn.textContent = ok ? "Copied!" : "Failed";
-    setTimeout(() => {
-      copyBtn.textContent = "Copy";
-    }, 1500);
+    copyBtn.title = ok ? "Copied!" : "Failed";
+    setTimeout(() => { copyBtn.title = "Copy"; }, 1500);
+  });
+
+  const downloadBtn = document.createElement("button");
+  downloadBtn.innerHTML = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', "Download");
+  downloadBtn.className = "btn-icon btn-secondary";
+  downloadBtn.title = "Download";
+  downloadBtn.addEventListener("click", () => {
+    const blob = new Blob([codeEl.textContent ?? ""], { type: "text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "kitty.conf";
+    a.click();
+    URL.revokeObjectURL(a.href);
   });
 
   buttons.appendChild(importBtn);
   buttons.appendChild(resetBtn);
+  buttons.appendChild(shareBtn);
   buttons.appendChild(copyBtn);
+  buttons.appendChild(downloadBtn);
   outputHeader.appendChild(h2);
   outputHeader.appendChild(buttons);
   output.appendChild(outputHeader);
@@ -324,43 +365,134 @@ export function render(root: HTMLElement): void {
   const importSection = document.createElement("div");
   importSection.className = "import-section hidden";
 
+  const importTabs = document.createElement("div");
+  importTabs.className = "import-tabs";
+
+  const pastePanel = document.createElement("div");
+  pastePanel.className = "import-panel";
   const importTextarea = document.createElement("textarea");
   importTextarea.placeholder = "Paste your kitty.conf here...";
   importTextarea.rows = 8;
+  pastePanel.appendChild(importTextarea);
+
+  const filePanel = document.createElement("div");
+  filePanel.className = "import-panel hidden";
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".conf,.txt";
+  filePanel.appendChild(fileInput);
+
+  const urlPanel = document.createElement("div");
+  urlPanel.className = "import-panel hidden";
+  const urlInput = document.createElement("input");
+  urlInput.type = "text";
+  urlInput.placeholder = "https://github.com/user/repo/blob/main/kitty.conf";
+  urlInput.className = "import-url-input";
+  urlPanel.appendChild(urlInput);
+
+  const panels = [pastePanel, filePanel, urlPanel];
+  const tabLabels = ["Paste", "File", "URL"];
+  const tabBtns: HTMLButtonElement[] = [];
+
+  for (let i = 0; i < tabLabels.length; i++) {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.textContent = tabLabels[i];
+    tab.className = i === 0 ? "import-tab active" : "import-tab";
+    tab.addEventListener("click", () => {
+      for (const t of tabBtns) t.classList.remove("active");
+      tab.classList.add("active");
+      for (const p of panels) p.classList.add("hidden");
+      panels[i].classList.remove("hidden");
+    });
+    tabBtns.push(tab);
+    importTabs.appendChild(tab);
+  }
+
+  importSection.appendChild(importTabs);
+  for (const p of panels) importSection.appendChild(p);
 
   const importActions = document.createElement("div");
   importActions.className = "import-actions";
-
-  const applyBtn = document.createElement("button");
-  applyBtn.textContent = "Apply";
-  applyBtn.addEventListener("click", () => {
-    const count = parseConfig(importTextarea.value);
-    applyBtn.textContent = `Applied ${count} settings`;
-    setTimeout(() => {
-      applyBtn.textContent = "Apply";
-    }, 1500);
-    importTextarea.value = "";
-    importSection.classList.add("hidden");
-  });
 
   const cancelBtn = document.createElement("button");
   cancelBtn.textContent = "Cancel";
   cancelBtn.className = "btn-secondary";
   cancelBtn.addEventListener("click", () => {
     importTextarea.value = "";
+    urlInput.value = "";
+    fileInput.value = "";
     importSection.classList.add("hidden");
+  });
+
+  const applyBtn = document.createElement("button");
+  applyBtn.textContent = "Apply";
+
+  function applyConfig(text: string): void {
+    resetAll();
+    const count = parseConfig(text);
+    applyBtn.textContent = `Applied ${count} settings`;
+    setTimeout(() => { applyBtn.textContent = "Apply"; }, 1500);
+    importTextarea.value = "";
+    urlInput.value = "";
+    fileInput.value = "";
+    importSection.classList.add("hidden");
+  }
+
+  function toRawGitHub(url: string): string | null {
+    const blob = url.match(
+      /^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/(.+)/,
+    );
+    if (blob) return `https://raw.githubusercontent.com/${blob[1]}/${blob[2]}/${blob[3]}`;
+    const raw = url.match(
+      /^https?:\/\/raw\.githubusercontent\.com\/.+/,
+    );
+    if (raw) return url;
+    return null;
+  }
+
+  applyBtn.addEventListener("click", async () => {
+    const activeIdx = tabBtns.findIndex((t) => t.classList.contains("active"));
+    if (activeIdx === 0) {
+      applyConfig(importTextarea.value);
+    } else if (activeIdx === 1) {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      applyConfig(text);
+    } else if (activeIdx === 2) {
+      const raw = urlInput.value.trim();
+      if (!raw) return;
+      const fetchUrl = toRawGitHub(raw);
+      if (!fetchUrl) {
+        applyBtn.textContent = "GitHub URLs only";
+        setTimeout(() => { applyBtn.textContent = "Apply"; }, 1500);
+        return;
+      }
+      applyBtn.textContent = "Fetching...";
+      try {
+        const resp = await fetch(fetchUrl);
+        if (!resp.ok) throw new Error(resp.statusText);
+        const text = await resp.text();
+        applyConfig(text);
+      } catch {
+        applyBtn.textContent = "Fetch failed";
+        setTimeout(() => { applyBtn.textContent = "Apply"; }, 1500);
+      }
+    }
   });
 
   importActions.appendChild(cancelBtn);
   importActions.appendChild(applyBtn);
-  importSection.appendChild(importTextarea);
   importSection.appendChild(importActions);
   output.appendChild(importSection);
 
   importBtn.addEventListener("click", () => {
     importSection.classList.toggle("hidden");
     if (!importSection.classList.contains("hidden")) {
-      importTextarea.focus();
+      const activeIdx = tabBtns.findIndex((t) => t.classList.contains("active"));
+      if (activeIdx === 0) importTextarea.focus();
+      else if (activeIdx === 2) urlInput.focus();
     }
   });
 

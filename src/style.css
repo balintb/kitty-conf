@@ -658,6 +658,40 @@ main {
   display: none;
 }
 
+.import-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.import-tab {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.import-tab:hover {
+  color: var(--text);
+  opacity: 1;
+}
+
+.import-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.import-panel.hidden {
+  display: none;
+}
+
 .import-section textarea {
   width: 100%;
   background: var(--bg);
@@ -676,6 +710,41 @@ main {
   outline: none;
   border-color: var(--border-focus);
   box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.import-url-input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+  transition: border-color var(--transition);
+}
+
+.import-url-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.import-panel input[type="file"] {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.import-panel input[type="file"]::file-selector-button {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin-right: 0.5rem;
 }
 
 .import-actions {
@@ -717,6 +786,18 @@ button:active {
   border-color: var(--border-focus);
   background: var(--accent-dim);
   opacity: 1;
+}
+
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  line-height: 0;
+}
+
+.btn-icon svg {
+  display: block;
 }
 
 /* Footer */
