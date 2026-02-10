@@ -836,6 +836,18 @@ button:active {
   display: block;
 }
 
+.btn-icon.btn-success {
+  border-color: #28c840;
+  color: #28c840;
+  background: rgba(40, 200, 64, 0.1);
+}
+
+.btn-icon.btn-error {
+  border-color: #ff5f57;
+  color: #ff5f57;
+  background: rgba(255, 95, 87, 0.1);
+}
+
 /* Footer */
 footer {
   text-align: center;

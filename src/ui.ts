@@ -296,54 +296,83 @@ export function render(root: HTMLElement): void {
   const icon = (svg: string, title: string): string =>
     `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>${title}</title>${svg}</svg>`;
 
+  const checkIcon = icon('<polyline points="20 6 9 17 4 12"/>', "Done");
+
+  function flashSuccess(btn: HTMLButtonElement, originalHtml: string, tooltip: string): void {
+    btn.innerHTML = checkIcon;
+    btn.classList.add("btn-success");
+    btn.title = tooltip;
+    setTimeout(() => {
+      btn.innerHTML = originalHtml;
+      btn.classList.remove("btn-success");
+      btn.title = btn.dataset.title ?? "";
+    }, 1500);
+  }
+
+  function flashError(btn: HTMLButtonElement, tooltip: string): void {
+    btn.classList.add("btn-error");
+    btn.title = tooltip;
+    setTimeout(() => {
+      btn.classList.remove("btn-error");
+      btn.title = btn.dataset.title ?? "";
+    }, 1500);
+  }
+
+  const importSvg = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', "Import");
   const importBtn = document.createElement("button");
-  importBtn.innerHTML = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>', "Import");
+  importBtn.innerHTML = importSvg;
   importBtn.className = "btn-icon btn-secondary";
   importBtn.title = "Import";
+  importBtn.dataset.title = "Import";
 
   const resetBtn = document.createElement("button");
   resetBtn.innerHTML = icon('<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>', "Reset");
   resetBtn.className = "btn-icon btn-secondary";
   resetBtn.title = "Reset";
+  resetBtn.dataset.title = "Reset";
   resetBtn.addEventListener("click", () => {
     resetAll();
   });
 
+  const shareSvg = icon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', "Share");
   const shareBtn = document.createElement("button");
-  shareBtn.innerHTML = icon('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>', "Share");
+  shareBtn.innerHTML = shareSvg;
   shareBtn.className = "btn-icon btn-secondary";
   shareBtn.title = "Share";
+  shareBtn.dataset.title = "Share";
   shareBtn.addEventListener("click", async () => {
     const url = await buildShareUrl();
     if (!url.includes("#")) {
-      shareBtn.title = "Nothing to share";
-      setTimeout(() => { shareBtn.title = "Share"; }, 1500);
+      flashError(shareBtn, "Nothing to share");
       return;
     }
     if (url.length > 2000) {
-      shareBtn.title = "URL too long";
-      setTimeout(() => { shareBtn.title = "Share"; }, 2000);
+      flashError(shareBtn, "URL too long");
       return;
     }
     const ok = await copyToClipboard(url);
-    shareBtn.title = ok ? "Link copied!" : "Failed";
-    setTimeout(() => { shareBtn.title = "Share"; }, 1500);
+    if (ok) flashSuccess(shareBtn, shareSvg, "Link copied!");
+    else flashError(shareBtn, "Failed");
   });
 
+  const copySvg = icon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', "Copy");
   const copyBtn = document.createElement("button");
-  copyBtn.innerHTML = icon('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>', "Copy");
+  copyBtn.innerHTML = copySvg;
   copyBtn.className = "btn-icon btn-secondary";
   copyBtn.title = "Copy";
+  copyBtn.dataset.title = "Copy";
   copyBtn.addEventListener("click", async () => {
     const ok = await copyToClipboard(codeEl.textContent ?? "");
-    copyBtn.title = ok ? "Copied!" : "Failed";
-    setTimeout(() => { copyBtn.title = "Copy"; }, 1500);
+    if (ok) flashSuccess(copyBtn, copySvg, "Copied!");
+    else flashError(copyBtn, "Failed");
   });
 
+  const downloadSvg = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', "Download");
   const downloadBtn = document.createElement("button");
-  downloadBtn.innerHTML = icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>', "Download");
+  downloadBtn.innerHTML = downloadSvg;
   downloadBtn.className = "btn-icon btn-secondary";
   downloadBtn.title = "Download";
+  downloadBtn.dataset.title = "Download";
   downloadBtn.addEventListener("click", () => {
     const blob = new Blob([codeEl.textContent ?? ""], { type: "text/plain" });
     const a = document.createElement("a");
@@ -351,6 +380,7 @@ export function render(root: HTMLElement): void {
     a.download = "kitty.conf";
     a.click();
     URL.revokeObjectURL(a.href);
+    flashSuccess(downloadBtn, downloadSvg, "Downloaded!");
   });
 
   buttons.appendChild(importBtn);
