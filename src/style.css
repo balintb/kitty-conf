@@ -653,6 +653,20 @@ main {
   gap: 0.35rem;
 }
 
+.permalink-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.permalink-toggle input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
 .output pre {
   background: var(--bg);
   border: 1px solid var(--border);
