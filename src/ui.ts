@@ -1,4 +1,4 @@
-import { CATEGORIES, type Setting } from "./schema";
+import { CATEGORIES, SETTINGS_MAP, type Setting } from "./schema";
 import {
   getValue,
   setValue,
@@ -6,6 +6,7 @@ import {
   resetAll,
   buildShareUrl,
   subscribe,
+  isValid,
   getMappings,
   addMapping,
   updateMapping,
@@ -875,6 +876,12 @@ export function render(root: HTMLElement): void {
     for (const [key, el] of inputElements) {
       const val = getValue(key);
       if (el.value !== val) el.value = val;
+      const setting = SETTINGS_MAP.get(key);
+      if (setting && val !== setting.default) {
+        el.classList.toggle("invalid", !isValid(setting, val));
+      } else {
+        el.classList.remove("invalid");
+      }
     }
     for (const [key, picker] of colorPickers) {
       const val = getValue(key);

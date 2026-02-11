@@ -13,6 +13,33 @@ for (const [key, setting] of SETTINGS_MAP) {
 type Listener = () => void;
 const listeners: Listener[] = [];
 
+export function isValid(setting: Setting, value: string): boolean {
+  switch (setting.type) {
+    case "int": {
+      if (!/^-?\d+$/.test(value.trim())) return false;
+      const n = parseInt(value, 10);
+      if ("min" in setting && setting.min !== undefined && n < setting.min) return false;
+      if ("max" in setting && setting.max !== undefined && n > setting.max) return false;
+      return true;
+    }
+    case "float": {
+      if (!/^-?\d+(\.\d+)?$/.test(value.trim())) return false;
+      const n = parseFloat(value);
+      if ("min" in setting && setting.min !== undefined && n < setting.min) return false;
+      if ("max" in setting && setting.max !== undefined && n > setting.max) return false;
+      return true;
+    }
+    case "enum":
+      return "options" in setting && setting.options.includes(value);
+    case "bool":
+      return value === "yes" || value === "no";
+    case "color":
+      return /^#[0-9a-fA-F]{6}$/.test(value);
+    default:
+      return true;
+  }
+}
+
 function valuesEqual(setting: Setting, a: string, b: string): boolean {
   if (setting.type === "float" || setting.type === "int") {
     return Number(a) === Number(b);
@@ -334,7 +361,7 @@ export function getChangedEntries(): [string, string][] {
   for (const category of CATEGORIES) {
     for (const setting of category.settings) {
       const value = values.get(setting.key);
-      if (value !== undefined && !valuesEqual(setting, value, setting.default)) {
+      if (value !== undefined && !valuesEqual(setting, value, setting.default) && isValid(setting, value)) {
         changed.push([setting.key, value]);
       }
     }
