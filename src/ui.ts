@@ -708,7 +708,11 @@ export function render(root: HTMLElement): void {
   permalinkRow.className = "permalink-toggle";
   const permalinkCheckbox = document.createElement("input");
   permalinkCheckbox.type = "checkbox";
-  permalinkCheckbox.addEventListener("change", syncAll);
+  permalinkCheckbox.checked = localStorage.getItem("kitty-conf-permalink") === "1";
+  permalinkCheckbox.addEventListener("change", () => {
+    localStorage.setItem("kitty-conf-permalink", permalinkCheckbox.checked ? "1" : "0");
+    syncAll();
+  });
   const permalinkLabel = document.createTextNode("Include permalink in config");
   permalinkRow.appendChild(permalinkCheckbox);
   permalinkRow.appendChild(permalinkLabel);
