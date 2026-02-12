@@ -920,6 +920,35 @@ footer a:hover {
   color: var(--accent);
 }
 
+.footer-projects {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.footer-project {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.footer-project:hover {
+  color: var(--accent);
+  border-color: var(--border-focus);
+}
+
+.footer-project.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
 /* Mapping rows */
 .mapping-advanced-toggle {
   display: flex;
