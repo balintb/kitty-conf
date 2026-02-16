@@ -866,11 +866,11 @@ export function render(root: HTMLElement): void {
   const projectLinks = document.createElement("div");
   projectLinks.className = "footer-projects";
   const kittyLink2 = document.createElement("a");
-  kittyLink2.href = "https://kitty-conf.balintb.com/";
+  kittyLink2.href = "https://go.balintb.com/kitty-conf";
   kittyLink2.textContent = "kitty-conf";
   kittyLink2.className = "footer-project active";
   const wezLink2 = document.createElement("a");
-  wezLink2.href = "https://wez-conf.balintb.com/";
+  wezLink2.href = "https://go.balintb.com/wez-conf";
   wezLink2.target = "_blank";
   wezLink2.rel = "noopener";
   wezLink2.textContent = "wez-conf";
