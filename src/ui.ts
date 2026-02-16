@@ -496,7 +496,7 @@ export function render(root: HTMLElement): void {
     ),
   );
   const repoLink = document.createElement("a");
-  repoLink.href = "https://balint.click/kitty-conf";
+  repoLink.href = "https://go.balintb.com/kitty-conf";
   repoLink.target = "_blank";
   repoLink.rel = "noopener";
   repoLink.className = "byline-link";
@@ -883,7 +883,7 @@ export function render(root: HTMLElement): void {
   footerText.textContent = "$ made with <3 | ";
   footer.appendChild(footerText);
   const footerLink = document.createElement("a");
-  footerLink.href = "https://balint.click/jXeIxM";
+  footerLink.href = "https://go.balintb.com/jXeIxM";
   footerLink.target = "_blank";
   footerLink.rel = "noopener";
   footerLink.textContent = "balintb";
